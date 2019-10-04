@@ -88,7 +88,7 @@ void main(){
         // começa a contar
 
         TB0R = 0x0000; // clear do output do timer
-        TB0CCR0 = 0x07CE;
+        TB0CCR0 = 0x8000 - 1;
         TB0CTL = (TBSSEL__SMCLK | MC__UP | TBCLR); // começa a contar
 
         // trava programa por estar recebendo um sinal
@@ -104,7 +104,7 @@ void main(){
         while(!(P1IN & BIT2));   //esperar receber uma leitura para seguir a diante
 
         TB0R = 0x0000;  // clear do output do timer
-        TB0CCR0 = 0x07CE;
+        TB0CCR0 = 0x8000 - 1;
         TB0CTL = (TBSSEL__SMCLK | MC__UP | TBCLR); // começa a contar
 
         // trava programa por estar recebendo um sinal
@@ -120,7 +120,7 @@ void main(){
         while(!(P1IN & BIT2));   //esperar receber uma leitura para seguir a diante
 
         TB0R = 0x0000;   // clear do output do timer
-        TB0CCR0 = 0x07CE;
+        TB0CCR0 = 0x8000 - 1;
         TB0CTL = (TBSSEL__SMCLK | MC__UP | TBCLR); // começa a contar
 
         // trava programa por estar recebendo um sinal
