@@ -30,12 +30,10 @@
  */
 
 
-int main(void)
-{
+void main(){
 
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
     PM5CTL0 &= ~LOCKLPM5;
-
 
     P1DIR |= BIT0;              // habilita saida no P1.0 (LED VERMELHO)
     P1REN &= ~(BIT0);           // habilita resistor de pull up
@@ -46,16 +44,17 @@ int main(void)
     P6OUT &= ~(BIT6);           // zera saida
 
 
-    P1DIR &= ~BIT2;             // P1.2 é entrada que recebe o out do sensor
-    //P1SEL |= BIT2;
+    P1DIR &= ~(BIT2);           // P1.2 é entrada que recebe o out do sensor
+    P1REN &= ~(BIT2);           // resistor de pull down para ser uma entrada
+    P5OUT |= BIT2;              // https://siddharthnandhanp.wordpress.com/2015/06/07/pxren-register-pull-updown-resistors/
 
     //S3
     P6DIR |= BIT3;              // P6.0 até P6.3 são entradas no sensor
-    P6OUT &= ~BIT3;             // as configuraremos
+    //P6OUT &= ~BIT3;             // as configuraremos
 
     //S2
     P6DIR |= BIT2;
-    P6OUT &= ~BIT2;             // S2 e S3 começam zerados
+    //P6OUT &= ~BIT2;             // S2 e S3 serão setados no while(1)
 
     //S1
     P6DIR |= BIT1;              // S0 = 0 e S1 = 1, para freq de saída a 20% (observação do professor)
@@ -65,44 +64,84 @@ int main(void)
     P6DIR |= BIT0;
     P6OUT |= BIT0;
 
+    int tempo_vermelho = 0;
+    int tempo_verde = 0;
+    int tempo_azul = 0;
 
-    /*  lógica de detectar as entradas?
+    while(1){
 
-    while(!(P1IN & BIT2));      //esperar receber uma leitura para seguir a diante
+        /*  lógica de detectar as entradas?
 
-    // seta o Timer B aqui, começa a contar, escolher o jeito certo lá de contar
+        TBSSEL__SMCLK -> Seleciona o SMCLK como fonte do timer b
+        MC__UP
+        TBCLR -> Limpa o clock
+        T = 1ms
+        */
 
-    while(P1IN & BIT2);      // trava programa por estar recebendo um sinal
+        // vermelho
+        // faz S2 e S3 virarem 0 e 0 para capturarmos o vermelho
+        P6OUT &= ~(BIT3);
+        P6OUT &= ~(BIT2);
 
-    // salva este tempo em uma variável
+        while(!(P1IN & BIT2));     //esperar receber uma leitura para seguir a diante
 
-    // o tempo sai em TB0CTL de acordo com o diagrama de instruções do timer B?
+        // começa a contar
 
-    // muda a flag que escolhe a cor
+        TB0R = 0x0000; // clear do output do timer
+        TB0CCR0 = 0x07CE;
+        TB0CTL = (TBSSEL__SMCLK | MC__UP | TBCLR); // começa a contar
 
-    // repete o processo, taca isso tudo num while(1) pra ficar mudando a cor
+        // trava programa por estar recebendo um sinal
+        while(P1IN & BIT2);
 
-     */
+        tempo_vermelho = TB0R;
+
+        // verde
+        // faz S2 e S3 virarem 1 e 1 para capturarmos o verde
+        P6OUT |= BIT3;
+        P6OUT |= BIT2;
+
+        while(!(P1IN & BIT2));   //esperar receber uma leitura para seguir a diante
+
+        TB0R = 0x0000;  // clear do output do timer
+        TB0CCR0 = 0x07CE;
+        TB0CTL = (TBSSEL__SMCLK | MC__UP | TBCLR); // começa a contar
+
+        // trava programa por estar recebendo um sinal
+        while(P1IN & BIT2);
+        tempo_verde = TB0R;
 
 
+        // azul
+        // faz S2 e S3 virarem 0 e 1 para capturarmos o verde
+        P6OUT |= BIT3;
+        P6OUT &= ~(BIT2);
+
+        while(!(P1IN & BIT2));   //esperar receber uma leitura para seguir a diante
+
+        TB0R = 0x0000;   // clear do output do timer
+        TB0CCR0 = 0x07CE;
+        TB0CTL = (TBSSEL__SMCLK | MC__UP | TBCLR); // começa a contar
+
+        // trava programa por estar recebendo um sinal
+        while(P1IN & BIT2);
+        tempo_azul = TB0R;
 
 
-    /*  lógica de setar os LEDs
+        //  lógica de setar os LEDs
+        if((tempo_verde > tempo_azul) && (tempo_verde > tempo_vermelho)){                       // verde dominante
+            P6OUT |= BIT6;          // setamos a luz verde
+            P1OUT &= ~(BIT0);       // apagamos a vermelha
+        }
+        if((tempo_vermelho > tempo_azul) && (tempo_vermelho > tempo_verde)){      // vermelho dominante
+            P1OUT |= BIT0;          // ligamos a luz vermelha
+            P6OUT &= ~(BIT6);       // apagamos a luz verde
+        }
+        else{                       // azul dominante
+            P1OUT |= BIT0;          // ligamos a luz vermelha
+            P6OUT |= BIT6;          // ligamos a luz verde
+        }
 
-    if(tempo_verde > tempo_azul && tempo verde > tempo_vermelho){                       // verde dominante
-        P6OUT |= BIT6;          // setamos a luz verde
-        P1OUT &= ~(BIT0);       // apagamos a vermelha
     }
-    if(tempo_vermelho > tempo_azul && tempo_vermelho > tempo_verde){      // vermelho dominante
-        P1OUT |= BIT0;          // ligamos a luz vermelha
-        P6OUT &= ~(BIT6);       // apagamos a luz verde
-    }
-    else{                       // azul dominante
-        P1OUT |= BIT0;          // ligamos a luz vermelha
-        P6OUT |= BIT6;          // ligamos a luz verde
-    }
 
-    */
-
-	return 0;
 }
