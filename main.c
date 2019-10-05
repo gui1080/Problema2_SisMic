@@ -1,10 +1,17 @@
-#include <msp430.h> 
+#include <msp430.h>
 #include <stdint.h>
 
 /*
- * LigaÃ§Ãµes com o sensor TCS3200
+ * Professor: Daniel Café
+ * Turma: D
+ * Alunos: Guilherme Braga (17/0162290) e Gabriel Matheus (17/0103498)
  *
- * Placa da Texas -> Sensor
+ */
+
+/*
+ * Ligações com o sensor TCS3200
+ *
+ * Sentido: MSP430 FR2355 -> Sensor
  *
  * P6.3 -> S3
  * P6.2 -> S2
@@ -15,7 +22,7 @@
  *
  * GND  -> GND
  * 3.3V -> VCC
- * GND  -> (OE)' = output enable
+ * GND  -> (OE)' = output enable  barrado
  *
  */
 
@@ -27,11 +34,10 @@
  * 1  1  -> vermelho
  */
 
-int x_vermelho, y_vermelho;
 void main(){
 
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
-    PM5CTL0 &= ~LOCKLPM5;
+    PM5CTL0 &= ~LOCKLPM5;       // destrava os pinos digitais
 
     P1DIR |= BIT0;              // habilita saida no P1.0 (LED VERMELHO)
     P1REN &= ~(BIT0);           // habilita resistor de pull up
@@ -42,45 +48,52 @@ void main(){
     P6OUT &= ~(BIT6);           // zera saida
 
 
-    P1DIR &= ~(BIT6);           // entrada
-    P1REN |= BIT6;
-    P1OUT |= BIT6;
-                                // novo - P1.6
+    P1DIR &= ~(BIT6);           // entrada relacionada ao clock
+    P1REN |= BIT6;              // habilitamos sua leitura
+    P1OUT |= BIT6;              // inicializamos com zero
     P1SEL1 |= (BIT6);
 
 
     //S3
-    P6DIR |= BIT3;              // P6.0 atÃ© P6.3 sÃ£o entradas no sensor
-    //P6OUT &= ~BIT3;             // as configuraremos
+    P6DIR |= BIT3;              // P6.0 até P6.3 são entradas no sensor
+    //P6OUT &= ~BIT3;
 
     //S2
     P6DIR |= BIT2;
-    //P6OUT &= ~BIT2;             // S2 e S3 serÃ£o setados no while(1)
+    //P6OUT &= ~BIT2;           // S2 e S3 serão setados no while(1)
 
     //S1
-    P6DIR |= BIT1;              // S0 = 0 e S1 = 1, para freq de saÃ­da a 20% (observaÃ§Ã£o do professor)
+    P6DIR |= BIT1;              // S0 = 0 e S1 = 1, setados apenas 1 vez, para freq de saída a 20% (observação do professor)
     P6OUT &= ~BIT1;
 
     //S0
     P6DIR |= BIT0;
     P6OUT |= BIT0;
 
+    //----------------------------------------------------------
+    // Variáveis auxiliares
+
     int vermelho = 0;
     int verde = 0;
     int azul = 0;
-    int sla = 0;
 
     int x_vermelho, y_vermelho;
     int x_verde, y_verde;
     int x_azul, y_azul;
-    int x_sla, y_sla;
 
-
+    //----------------------------------------------------------
+    // Começo do Clock: Modo Contínuo, ACLK
     TB0CTL = TBSSEL__ACLK | MC__CONTINUOUS;
 
+    // CAP: Seleciona entre captura e comparação
+    // CM: Configura o modo de captura,
+    // SCS: define a sincronia do clock com o sinal de captura
     TB0CCTL1 = CAP | SCS | CM_1;
 
     while(1){
+
+        // Medimos o tempo sempre entre 2 flancos de subida
+        // assim vemos o sinal maior e ativamos o LED correspondente
 
         // Vermelho
         //----------------------------------------------------------
@@ -135,7 +148,7 @@ void main(){
         azul = (y_azul - x_azul);
 
 
-        //LÃ³gica de setar os LEDs
+        //Lógica de setar os LEDs
         //----------------------------------------------------------
 
         if((verde > azul) && (verde > vermelho)){                       // verde dominante
