@@ -1,35 +1,33 @@
 #include <msp430.h> 
 #include <stdint.h>
 
-// Alunos: Guilherme Braga (17/0162290) e Gabriel Matheus (17/0103498)
-
 /*
- * Ligações com o sensor TCS3200
+ * LigaÃ§Ãµes com o sensor TCS3200
  *
  * Placa da Texas -> Sensor
  *
- * P1.3 -> S3
+ * P6.3 -> S3
  * P6.2 -> S2
  * P6.1 -> S1
  * P6.0 -> S0
  *
- * P1.2 <- OUT
+ * P1.6 <- OUT
  *
  * GND  -> GND
- * 3.3V -> VLC ou VCC?
- * GND  -> (OE)' output enable
+ * 3.3V -> VCC
+ * GND  -> (OE)' = output enable
  *
  */
 
 /**
  * S2 S3
- * 0  0  -> vermelho
- * 0  1  -> azul
- * 1  0  -> sem filtro
- * 1  1  -> verde
+ * 0  0  -> azul
+ * 0  1  -> verde
+ * 1  0  -> branco
+ * 1  1  -> vermelho
  */
 
-
+int x_vermelho, y_vermelho;
 void main(){
 
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
@@ -44,104 +42,119 @@ void main(){
     P6OUT &= ~(BIT6);           // zera saida
 
 
-    P1DIR &= ~(BIT2);           // P1.2 é entrada que recebe o out do sensor
-    P1REN &= ~(BIT2);           // resistor de pull down para ser uma entrada
-    P5OUT |= BIT2;              // https://siddharthnandhanp.wordpress.com/2015/06/07/pxren-register-pull-updown-resistors/
+    P1DIR &= ~(BIT6);           // entrada
+    P1REN |= BIT6;
+    P1OUT |= BIT6;
+                                // novo - P1.6
+    P1SEL1 |= (BIT6);
+
 
     //S3
-    P6DIR |= BIT3;              // P6.0 até P6.3 são entradas no sensor
+    P6DIR |= BIT3;              // P6.0 atÃ© P6.3 sÃ£o entradas no sensor
     //P6OUT &= ~BIT3;             // as configuraremos
 
     //S2
     P6DIR |= BIT2;
-    //P6OUT &= ~BIT2;             // S2 e S3 serão setados no while(1)
+    //P6OUT &= ~BIT2;             // S2 e S3 serÃ£o setados no while(1)
 
     //S1
-    P6DIR |= BIT1;              // S0 = 0 e S1 = 1, para freq de saída a 20% (observação do professor)
+    P6DIR |= BIT1;              // S0 = 0 e S1 = 1, para freq de saÃ­da a 20% (observaÃ§Ã£o do professor)
     P6OUT &= ~BIT1;
 
     //S0
     P6DIR |= BIT0;
     P6OUT |= BIT0;
 
-    int tempo_vermelho = 0;
-    int tempo_verde = 0;
-    int tempo_azul = 0;
+    int vermelho = 0;
+    int verde = 0;
+    int azul = 0;
+    int sla = 0;
+
+    int x_vermelho, y_vermelho;
+    int x_verde, y_verde;
+    int x_azul, y_azul;
+    int x_sla, y_sla;
+
+
+    TB0CTL = TBSSEL__ACLK | MC__CONTINUOUS;
+
+    TB0CCTL1 = CAP | SCS | CM_1;
 
     while(1){
 
-        /*  lógica de detectar as entradas?
+        // Vermelho
+        //----------------------------------------------------------
 
-        TBSSEL__SMCLK -> Seleciona o SMCLK como fonte do timer b
-        MC__UP
-        TBCLR -> Limpa o clock
-        T = 1ms
-        */
-
-        // vermelho
-        // faz S2 e S3 virarem 0 e 0 para capturarmos o vermelho
-        P6OUT &= ~(BIT3);
-        P6OUT &= ~(BIT2);
-
-        while(!(P1IN & BIT2));     //esperar receber uma leitura para seguir a diante
-
-        // começa a contar
-
-        TB0R = 0x0000; // clear do output do timer
-        TB0CCR0 = 0x8000 - 1;
-        TB0CTL = (TBSSEL__SMCLK | MC__UP | TBCLR); // começa a contar
-
-        // trava programa por estar recebendo um sinal
-        while(P1IN & BIT2);
-
-        tempo_vermelho = TB0R;
-
-        // verde
-        // faz S2 e S3 virarem 1 e 1 para capturarmos o verde
-        P6OUT |= BIT3;
         P6OUT |= BIT2;
-
-        while(!(P1IN & BIT2));   //esperar receber uma leitura para seguir a diante
-
-        TB0R = 0x0000;  // clear do output do timer
-        TB0CCR0 = 0x8000 - 1;
-        TB0CTL = (TBSSEL__SMCLK | MC__UP | TBCLR); // começa a contar
-
-        // trava programa por estar recebendo um sinal
-        while(P1IN & BIT2);
-        tempo_verde = TB0R;
-
-
-        // azul
-        // faz S2 e S3 virarem 0 e 1 para capturarmos o verde
         P6OUT |= BIT3;
-        P6OUT &= ~(BIT2);
 
-        while(!(P1IN & BIT2));   //esperar receber uma leitura para seguir a diante
+        while(!(TB0CCTL1 & CCIFG));     // aguardar o flanco
+        TB0CCTL1 &= ~CCIFG;
+        x_vermelho = TB0CCR1;
 
-        TB0R = 0x0000;   // clear do output do timer
-        TB0CCR0 = 0x8000 - 1;
-        TB0CTL = (TBSSEL__SMCLK | MC__UP | TBCLR); // começa a contar
-
-        // trava programa por estar recebendo um sinal
-        while(P1IN & BIT2);
-        tempo_azul = TB0R;
+        while(!(TB0CCTL1 & CCIFG));     // aguardar o flanco
+        TB0CCTL1 &= ~CCIFG;
+        y_vermelho = TB0CCR1;
 
 
-        //  lógica de setar os LEDs
-        if((tempo_verde > tempo_azul) && (tempo_verde > tempo_vermelho)){                       // verde dominante
+        vermelho = (y_vermelho - x_vermelho);
+
+        // Verde
+        //----------------------------------------------------------
+
+
+        P6OUT |= BIT3; // s3
+        P6OUT &= ~BIT2; // s2
+
+        while(!(TB0CCTL1 & CCIFG));     // aguardar o flanco
+        TB0CCTL1 &= ~CCIFG;
+        x_verde = TB0CCR1;
+
+        while(!(TB0CCTL1 & CCIFG));     // aguardar o flanco
+        TB0CCTL1 &= ~CCIFG;
+        y_verde = TB0CCR1;
+
+        verde = (y_verde - x_verde);
+
+
+        // Azul
+        //----------------------------------------------------------
+
+        P6OUT &= ~(BIT3); // s3
+        P6OUT &= ~(BIT2); // s2
+
+        while(!(TB0CCTL1 & CCIFG));     // aguardar o flanco
+        TB0CCTL1 &= ~CCIFG;
+        x_azul = TB0CCR1;
+
+        while(!(TB0CCTL1 & CCIFG));     // aguardar o flanco
+        TB0CCTL1 &= ~CCIFG;
+        y_azul = TB0CCR1;
+
+
+        azul = (y_azul - x_azul);
+
+
+        //LÃ³gica de setar os LEDs
+        //----------------------------------------------------------
+
+        if((verde > azul) && (verde > vermelho)){                       // verde dominante
             P6OUT |= BIT6;          // setamos a luz verde
             P1OUT &= ~(BIT0);       // apagamos a vermelha
         }
-        if((tempo_vermelho > tempo_azul) && (tempo_vermelho > tempo_verde)){      // vermelho dominante
+
+        if((vermelho > azul) && (vermelho > verde)){                    // vermelho dominante
             P1OUT |= BIT0;          // ligamos a luz vermelha
             P6OUT &= ~(BIT6);       // apagamos a luz verde
         }
-        else{                       // azul dominante
+
+        if((azul > vermelho) && (azul > verde )){                       // azul dominante
             P1OUT |= BIT0;          // ligamos a luz vermelha
             P6OUT |= BIT6;          // ligamos a luz verde
+
         }
 
     }
+
 
 }
