@@ -2,14 +2,14 @@
 #include <stdint.h>
 
 /*
- * Professor: Daniel Café
+ * Professor: Daniel CafÃ©
  * Turma: D
  * Alunos: Guilherme Braga (17/0162290) e Gabriel Matheus (17/0103498)
- *
+ * Trabalho no Github: https://github.com/therealguib545/Problema2_SisMic
  */
 
 /*
- * Ligações com o sensor TCS3200
+ * LigaÃ§Ãµes com o sensor TCS3200
  *
  * Sentido: MSP430 FR2355 -> Sensor
  *
@@ -55,15 +55,15 @@ void main(){
 
 
     //S3
-    P6DIR |= BIT3;              // P6.0 até P6.3 são entradas no sensor
+    P6DIR |= BIT3;              // P6.0 atÃ© P6.3 sÃ£o entradas no sensor
     //P6OUT &= ~BIT3;
 
     //S2
     P6DIR |= BIT2;
-    //P6OUT &= ~BIT2;           // S2 e S3 serão setados no while(1)
+    //P6OUT &= ~BIT2;           // S2 e S3 serÃ£o setados no while(1)
 
     //S1
-    P6DIR |= BIT1;              // S0 = 0 e S1 = 1, setados apenas 1 vez, para freq de saída a 20% (observação do professor)
+    P6DIR |= BIT1;              // S0 = 0 e S1 = 1, setados apenas 1 vez, para freq de saÃ­da a 20% (observaÃ§Ã£o do professor)
     P6OUT &= ~BIT1;
 
     //S0
@@ -71,7 +71,7 @@ void main(){
     P6OUT |= BIT0;
 
     //----------------------------------------------------------
-    // Variáveis auxiliares
+    // VariÃ¡veis auxiliares
 
     int vermelho = 0;
     int verde = 0;
@@ -82,10 +82,10 @@ void main(){
     int x_azul, y_azul;
 
     //----------------------------------------------------------
-    // Começo do Clock: Modo Contínuo, ACLK
+    // ComeÃ§o do Clock: Modo ContÃ­nuo, ACLK
     TB0CTL = TBSSEL__ACLK | MC__CONTINUOUS;
 
-    // CAP: Seleciona entre captura e comparação
+    // CAP: Seleciona entre captura e comparaÃ§Ã£o
     // CM: Configura o modo de captura,
     // SCS: define a sincronia do clock com o sinal de captura
     TB0CCTL1 = CAP | SCS | CM_1;
@@ -148,7 +148,7 @@ void main(){
         azul = (y_azul - x_azul);
 
 
-        //Lógica de setar os LEDs
+        //LÃ³gica de setar os LEDs
         //----------------------------------------------------------
 
         if((verde > azul) && (verde > vermelho)){                       // verde dominante
