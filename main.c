@@ -43,7 +43,7 @@ void main(){
     P1REN &= ~(BIT0);           // habilita resistor de pull up
     P1OUT &= ~(BIT0);           // zera saida
 
-    P6DIR |= BIT6;              // habilita saida no P1.0 (LED VERDE)
+    P6DIR |= BIT6;              // habilita saida no P6.6 (LED VERDE)
     P6REN &= ~(BIT6);           // habilita resistor de pull up
     P6OUT &= ~(BIT6);           // zera saida
 
